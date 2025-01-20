@@ -6,11 +6,9 @@ import FamilyRoutes from './routes/FamilyRoutes'
 import path from 'path';
 const app: Application = express();
 
-// Middleware
 app.use(bodyParser.json());
 app.use(cors());
 
-// MongoDB connection
 const connectDB = async () => {
     try {
         await mongoose.connect('mongodb://127.0.0.1:27017/family_management');

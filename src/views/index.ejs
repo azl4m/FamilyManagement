@@ -14,12 +14,12 @@
     <div class="container mt-5">
       <h1>Family Members</h1>
       <ul id="family-list" class="list-group">
-        <!-- Family members will be inserted here -->
+        
         <% familyMembers.forEach(function(member) { %>
         <li
           class="list-group-item d-flex justify-content-between align-items-center"
         >
-          <!-- <%= member.name %> (<%= member.age %>) - <%= member.relation %> -->
+          
           <button class="btn btn-danger btn-sm">Delete</button>
         </li>
         <% }) %>
@@ -93,46 +93,49 @@
     </div>
 
     <script>
-
       async function getFamilyMembers() {
         try {
           const response = await fetch("/api/family/getDetails");
           const membersObj = await response.json();
           const members = Object.values(membersObj);
-        //   console.log(members);
-          
+
           const familyList = document.getElementById("family-list");
-          familyList.innerHTML = ""; // Clear existing members
+          familyList.innerHTML = ""; 
 
           members[0].forEach((member) => {
-            console.log(member);
-            
             const li = document.createElement("li");
             li.className =
               "list-group-item d-flex justify-content-between align-items-center";
-            li.innerHTML = `${member.name} (${member.age}) - ${member.relation}`;
 
-            // Create Edit button
+            const memberDetails = document.createElement("div");
+            memberDetails.innerText = `${member.name} (${member.age}) - ${member.relation}`;
+
+            const buttonGroup = document.createElement("div");
+            buttonGroup.className = "d-flex justify-content-end";
+
             const editButton = document.createElement("button");
             editButton.className = "btn btn-warning btn-sm me-2";
             editButton.innerText = "Edit";
-            editButton.onclick = () => openEditModal(member); // Open the modal for editing
+            editButton.onclick = () => openEditModal(member);
 
-            // Create Delete button
             const deleteButton = document.createElement("button");
             deleteButton.className = "btn btn-danger btn-sm";
             deleteButton.innerText = "Delete";
             deleteButton.onclick = () => deleteFamilyMember(member._id);
 
-            li.appendChild(editButton);
-            li.appendChild(deleteButton); // Append buttons to the list item
+            buttonGroup.appendChild(editButton);
+            buttonGroup.appendChild(deleteButton);
+
+            li.appendChild(memberDetails);
+            li.appendChild(buttonGroup);
+
             familyList.appendChild(li);
           });
         } catch (error) {
           console.error("Error fetching family members:", error);
         }
       }
-      // Open the edit modal and prefill the form
+
       function openEditModal(member) {
         document.getElementById("editName").value = member.name;
         document.getElementById("editAge").value = member.age;
@@ -141,20 +144,18 @@
         const form = document.getElementById("editFamilyForm");
         form.onsubmit = (event) => {
           event.preventDefault();
-          updateFamilyMember(member._id); // Pass the member ID to the update function
+          updateFamilyMember(member._id); 
         };
 
-        // Show the modal
         const editModal = new bootstrap.Modal(
           document.getElementById("editFamilyMemberModal")
         );
         editModal.show();
       }
 
-      // Update family member by sending a PUT request
       async function updateFamilyMember(id) {
         console.log("inside update family member");
-        
+
         const name = document.getElementById("editName").value;
         const age = document.getElementById("editAge").value;
         const relation = document.getElementById("editRelation").value;
@@ -171,20 +172,17 @@
           const updatedMember = await response.json();
           console.log("Updated member:", updatedMember);
 
-          // Hide the modal after updating
           const editModal = bootstrap.Modal.getInstance(
             document.getElementById("editFamilyMemberModal")
           );
           editModal.hide();
 
-          // Refresh the list of family members
           getFamilyMembers();
         } else {
           console.error("Error updating member");
         }
       }
 
-      // Delete family member by sending a DELETE request
       async function deleteFamilyMember(id) {
         const response = await fetch(`/api/family/delete/${id}`, {
           method: "DELETE",
@@ -192,7 +190,7 @@
 
         if (response.ok) {
           console.log("Deleted family member");
-          getFamilyMembers(); // Refresh the list after deletion
+          getFamilyMembers(); 
           window.location.reload();
         } else {
           console.error("Error deleting member");
@@ -200,7 +198,7 @@
       }
       document.getElementById("add-family-member-form").onsubmit =
         async function (event) {
-          event.preventDefault(); // Prevent form from reloading the page
+          event.preventDefault(); 
 
           const name = document.getElementById("name").value;
           const age = document.getElementById("age").value;
@@ -217,9 +215,9 @@
 
             if (response.ok) {
               console.log("Family member added successfully");
-              // Clear the form fields
+             
               document.getElementById("add-family-member-form").reset();
-              getFamilyMembers(); // Refresh the list of family members
+              getFamilyMembers(); 
             } else {
               console.error("Error adding family member");
             }
@@ -227,12 +225,11 @@
             console.error("Error:", error);
           }
         };
-      // Load family members on page load
+      
       window.onload = getFamilyMembers();
     </script>
-    <!-- Popper.js and Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
-
+    
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
   </body>
 </html>
