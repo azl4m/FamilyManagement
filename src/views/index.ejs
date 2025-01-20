@@ -1,0 +1,238 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Family Management</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Family Members</h1>
+      <ul id="family-list" class="list-group">
+        <!-- Family members will be inserted here -->
+        <% familyMembers.forEach(function(member) { %>
+        <li
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          <!-- <%= member.name %> (<%= member.age %>) - <%= member.relation %> -->
+          <button class="btn btn-danger btn-sm">Delete</button>
+        </li>
+        <% }) %>
+      </ul>
+      <h3>Add Family Member</h3>
+      <form id="add-family-member-form">
+        <div class="mb-3">
+          <label for="name" class="form-label">Name</label>
+          <input type="text" class="form-control" id="name" required />
+        </div>
+        <div class="mb-3">
+          <label for="age" class="form-label">Age</label>
+          <input type="number" class="form-control" id="age" required />
+        </div>
+        <div class="mb-3">
+          <label for="relation" class="form-label">Relation</label>
+          <input type="text" class="form-control" id="relation" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Add Member</button>
+      </form>
+    </div>
+    <!-- update family member -->
+    <div class="modal" tabindex="-1" id="editFamilyMemberModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Family Member</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="editFamilyForm">
+              <div class="mb-3">
+                <label for="editName" class="form-label">Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="editName"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="editAge" class="form-label">Age</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="editAge"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="editRelation" class="form-label">Relation</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="editRelation"
+                  required
+                />
+              </div>
+              <button type="submit" class="btn btn-primary">
+                Save changes
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+
+      async function getFamilyMembers() {
+        try {
+          const response = await fetch("/api/family/getDetails");
+          const membersObj = await response.json();
+          const members = Object.values(membersObj);
+        //   console.log(members);
+          
+          const familyList = document.getElementById("family-list");
+          familyList.innerHTML = ""; // Clear existing members
+
+          members[0].forEach((member) => {
+            console.log(member);
+            
+            const li = document.createElement("li");
+            li.className =
+              "list-group-item d-flex justify-content-between align-items-center";
+            li.innerHTML = `${member.name} (${member.age}) - ${member.relation}`;
+
+            // Create Edit button
+            const editButton = document.createElement("button");
+            editButton.className = "btn btn-warning btn-sm me-2";
+            editButton.innerText = "Edit";
+            editButton.onclick = () => openEditModal(member); // Open the modal for editing
+
+            // Create Delete button
+            const deleteButton = document.createElement("button");
+            deleteButton.className = "btn btn-danger btn-sm";
+            deleteButton.innerText = "Delete";
+            deleteButton.onclick = () => deleteFamilyMember(member._id);
+
+            li.appendChild(editButton);
+            li.appendChild(deleteButton); // Append buttons to the list item
+            familyList.appendChild(li);
+          });
+        } catch (error) {
+          console.error("Error fetching family members:", error);
+        }
+      }
+      // Open the edit modal and prefill the form
+      function openEditModal(member) {
+        document.getElementById("editName").value = member.name;
+        document.getElementById("editAge").value = member.age;
+        document.getElementById("editRelation").value = member.relation;
+
+        const form = document.getElementById("editFamilyForm");
+        form.onsubmit = (event) => {
+          event.preventDefault();
+          updateFamilyMember(member._id); // Pass the member ID to the update function
+        };
+
+        // Show the modal
+        const editModal = new bootstrap.Modal(
+          document.getElementById("editFamilyMemberModal")
+        );
+        editModal.show();
+      }
+
+      // Update family member by sending a PUT request
+      async function updateFamilyMember(id) {
+        console.log("inside update family member");
+        
+        const name = document.getElementById("editName").value;
+        const age = document.getElementById("editAge").value;
+        const relation = document.getElementById("editRelation").value;
+
+        const response = await fetch(`/api/family/update/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name, age, relation }),
+        });
+
+        if (response.ok) {
+          const updatedMember = await response.json();
+          console.log("Updated member:", updatedMember);
+
+          // Hide the modal after updating
+          const editModal = bootstrap.Modal.getInstance(
+            document.getElementById("editFamilyMemberModal")
+          );
+          editModal.hide();
+
+          // Refresh the list of family members
+          getFamilyMembers();
+        } else {
+          console.error("Error updating member");
+        }
+      }
+
+      // Delete family member by sending a DELETE request
+      async function deleteFamilyMember(id) {
+        const response = await fetch(`/api/family/delete/${id}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          console.log("Deleted family member");
+          getFamilyMembers(); // Refresh the list after deletion
+          window.location.reload();
+        } else {
+          console.error("Error deleting member");
+        }
+      }
+      document.getElementById("add-family-member-form").onsubmit =
+        async function (event) {
+          event.preventDefault(); // Prevent form from reloading the page
+
+          const name = document.getElementById("name").value;
+          const age = document.getElementById("age").value;
+          const relation = document.getElementById("relation").value;
+
+          try {
+            const response = await fetch("/api/family/add", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ name, age, relation }),
+            });
+
+            if (response.ok) {
+              console.log("Family member added successfully");
+              // Clear the form fields
+              document.getElementById("add-family-member-form").reset();
+              getFamilyMembers(); // Refresh the list of family members
+            } else {
+              console.error("Error adding family member");
+            }
+          } catch (error) {
+            console.error("Error:", error);
+          }
+        };
+      // Load family members on page load
+      window.onload = getFamilyMembers();
+    </script>
+    <!-- Popper.js and Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+
+  </body>
+</html>
